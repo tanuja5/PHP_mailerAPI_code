@@ -1,0 +1,77 @@
+	<?php
+require 'C:\xampp\htdocs\PHPMailer-master\PHPMailerAutoload.php';
+
+session_start();
+$regno = $_SESSION['$log_user'];
+$bol = $_SESSION['mem'];
+$posts_m= 0 ;
+$vals= array();
+$event_name='';
+foreach ($_POST as $keys => $values)
+     $vals[] = htmlspecialchars($values);
+	 $posts_m = $vals[0];
+	 echo $posts_m;
+$DB_HOST="localhost"; 
+$DB_NAME="userEvents";
+$DB_USER="root"; 
+$DB_PASSWORD="";
+
+$conn=mysqli_connect($DB_HOST,$DB_USER,$DB_PASSWORD,$DB_NAME);
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+} 
+echo "Connected successfully";
+
+if(mysqli_query($conn,"UPDATE participants SET mailed = 1 where regno = '$regno' and eve_id = '$posts_m' "))
+{$result = mysqli_query($conn, "SELECT eve_name from event WHERE eve_id = $posts_m");
+$row = mysqli_fetch_array($result);
+$event_name = $row[0];
+echo $event_name;
+}
+else{
+	echo "couldnt update mailed";
+}
+
+echo "Connected successfully";
+
+$result="select email from students where regno = '$regno' ";
+$query= mysqli_query($conn, $result);
+	while($row = mysqli_fetch_array($query))
+	{$mail = new PHPMailer;
+		$mail->isSMTP();                                      // Set mailer to use SMTP
+        $mail->Host = 'smtp.gmail.com';  // Specify main and backup SMTP servers
+        $mail->SMTPDebug = 4;
+        $mail->SMTPAuth = true;                               // Enable SMTP authentication
+        $mail->Username = 'YOUR_MAIL_ID';                 // SMTP username
+        $mail->Password = 'YOUR_PASSWORD';                           // SMTP password
+        $mail->SMTPSecure = 'ssl';                            // Enable TLS encryption, `ssl` also accepted
+        $mail->Port = 465;                                    // TCP port to connect to
+
+        $mail->setFrom('YOUR_MAIL_ID', 'YOUR_NAME');
+        $mail->addAddress($row[0], 'User');     // Add a recipient
+        $mail->addReplyTo('YOUR_MAIL_ID', 'YOUR_NAME');
+
+        $mail->isHTML(true);                                  // Set email format to HTML
+
+        $mail->Subject = 'HELLO USER';
+        $mail->Body    = 'hey.this is a reminder for the upcoming event,hope you practicing well! cheers! '.$event_name.' ';
+        $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+        if(!$mail->send()) 
+		{
+			 echo 'Message could not be sent,Check your internet connectivity';
+        } 
+        else 
+		{
+			if($bol=="no")
+		  header("Location: postview.php");
+	  else
+		  header("Location: postview_mem.php");
+        }
+	}
+if(!mysqli_query($conn,$result))
+{
+ echo "Error: " . $result . "<br>" . mysqli_error($conn);
+}
+
+mysqli_close($conn);
+?>
